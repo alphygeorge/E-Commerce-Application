@@ -14,13 +14,12 @@ from django.db.models import Sum
 from .serializers import CustomerSerializer, ProductSerializer , InventoryUpdateSerializer
 from .recommendation_engine import RecommendationEngine  
 
-
+# Viewset for managing Customer objects
 class CustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-
     permission_classes = [IsAuthenticated]
-
+    # Custom retrieve method to handle customer retrieval
     def retrieve(self, request, *args, **kwargs):
         try:
             customer = self.get_object()
@@ -29,7 +28,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(customer)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    # Custom list method to list all customers
     def list(self, request, *args, **kwargs):
         try:
             customers = self.queryset
@@ -39,25 +38,25 @@ class CustomerViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# Viewset for handling Product-related operations
 class ProductViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]  
-
+    # List only available products (those with inventory > 0)
     def list_available_products(self, request):
         available_products = Product.objects.available_products()  
         serializer = ProductSerializer(available_products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+    # List all products (optional, if you want to list all products)
     def list(self, request):
         """ List all products (optional, if you want to allow listing all products) """
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-class SalesViewSet(viewsets.ViewSet):
-    
+# Viewset for exporting sales reports
+class SalesViewSet(viewsets.ViewSet):   
     permission_classes = [AllowAny]  
-
+    # Method to export monthly sales report as an Excel file
     def export_monthly_sales(self, request, year, month):
         # Validate the month
         if month < 1 or month > 12:
@@ -104,15 +103,12 @@ class SalesViewSet(viewsets.ViewSet):
 
         # Save the workbook to the response
         workbook.save(response)
-
         return response
 
-
-
-
-
+# Viewset for handling various sales analytics operations
 class SalesAnalyticsViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]  
+    # Method to calculate revenue by category
     def revenue_by_category(self, request):
         try:
             start_date = request.query_params.get('start_date')
@@ -120,16 +116,16 @@ class SalesAnalyticsViewSet(viewsets.ViewSet):
 
             if not start_date or not end_date:
                 return Response({"error": "Both start_date and end_date are required."}, status=status.HTTP_400_BAD_REQUEST)
-
+            # Convert the dates to datetime objects
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
-
+           # Call the analytics method to calculate revenue by category
             revenue = SalesAnalytics.calculate_revenue_by_category(start_date, end_date)
             return Response(revenue, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+    # Method to get top-selling products by country
     def top_selling_products(self, request):
         try:
             start_date = request.query_params.get('start_date')
@@ -141,13 +137,13 @@ class SalesAnalyticsViewSet(viewsets.ViewSet):
 
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
-
+            # Call the analytics method to get top products for the given country
             top_products = SalesAnalytics.top_selling_products_by_country(start_date, end_date, country)
             return Response(top_products, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+    # Method to calculate customer churn rate
     def churn_rate(self, request):
         try:
             churn_rate = SalesAnalytics.calculate_churn_rate()
@@ -156,7 +152,7 @@ class SalesAnalyticsViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
 
-    
+    # Method to return aggregated sales data
     def aggregated_salesdata(self, request):
         # Calculate total sales revenue
         total_revenue = Order.objects.aggregate(Sum('total_amount'))['total_amount__sum'] or 0
@@ -174,9 +170,10 @@ class SalesAnalyticsViewSet(viewsets.ViewSet):
         return Response(aggregated_data)
 
 
-
+# Viewset for product recommendations
 class RecommendationViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]  
+    # Method to list recommended products for a customer
     def list(self, request):
         customer_id = request.query_params.get('customer_id')
 
@@ -186,7 +183,7 @@ class RecommendationViewSet(viewsets.ViewSet):
         try:
             customer = Customer.objects.get(id=customer_id)
             recommended_products = RecommendationEngine.recommend_products(customer)
-            serializer = ProductSerializer(recommended_products, many=True)  # Assuming you have a ProductSerializer
+            serializer = ProductSerializer(recommended_products, many=True)  
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Customer.DoesNotExist:
             return Response({"error": "Customer not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -195,9 +192,10 @@ class RecommendationViewSet(viewsets.ViewSet):
         
 
 
-
+# Viewset for managing inventory updates
 class InventoryViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]  
+    # Method to update inventory for a specific product
 
     def update(self, request, pk=None):
         try:

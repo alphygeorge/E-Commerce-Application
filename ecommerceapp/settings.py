@@ -54,17 +54,6 @@ SIMPLE_JWT = {
 }
 
 
-
-# Email settings
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Gmail SMTP server
-EMAIL_PORT = 587  # TLS port
-EMAIL_USE_TLS = True  # Use TLS
-EMAIL_HOST_USER = 'alphygeorge70@gmail.com'  # Your Gmail address
-EMAIL_HOST_PASSWORD = 'your_email_password'  # Your Gmail password
-DEFAULT_FROM_EMAIL = 'alphygeorge70@gmail.com'  # Default email address to use for "from" field
-
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
